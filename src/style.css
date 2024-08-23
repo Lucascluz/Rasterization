@@ -1,0 +1,80 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background-color: #333;
+    color: white;
+    padding-bottom: 10px;
+    height: 50px;
+}
+
+.toolbar button {
+    background-color: #444;
+    border: none;
+    color: white;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.toolbar button:hover {
+    background-color: #555;
+}
+
+.snackbar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background-color: #333;
+    color: white;
+    height: 50px;
+}
+
+.snackbar button {
+    background-color: #444;
+    border: none;
+    color: white;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.snackbar button:hover {
+    background-color: #ff0000;
+}
+
+.grid-container {
+    display: grid;
+    flex-grow: 1;
+    background-color: #f0f0f0;
+    padding: 10px;
+    box-sizing: border-box;
+    justify-content: center;
+    align-content: start;
+}
+
+.grid-item {
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    margin: 1px;
+}
+
+.grid-item:hover {
+    background-color: #3a3a3a;
+}
