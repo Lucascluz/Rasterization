@@ -11,8 +11,9 @@
 <body>
     <div class="container">
         <div class="toolbar">
-            <button>Shape</button>
-            <button>Circle</button>
+            <button onclick="connectPoints(selectedPoints)">Shape</button>
+            <button onclick="createCircle(selectedPoints[0], selectedPoints[1])">Circle</button>
+            <input type="color" id="lineColorPicker" value="#000000"> <!-- Input para selecionar a cor -->
         </div>
 
         <div class="grid-container"></div>
