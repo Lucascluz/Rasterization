@@ -1,6 +1,6 @@
 // Número de linhas e colunas do grid
-const rows = 85;
-const cols = 70;
+const rows = 80;
+const cols = 55;
 
 // Tamanho de cada item do grid em pixels
 const gridItemSize = 10;
@@ -12,6 +12,15 @@ let createdCircles = [];
 
 // Obtém o input de cor
 const colorPicker = document.getElementById('lineColorPicker');
+
+// Obtém o sinal de rasterização de linha
+const algorithmSwitch = document.getElementById('algorithmSelector');
+
+// Obtém o coeficiente de rotação
+const rotationCoefficientInput = document.getElementById('rotationCoefficient');
+
+// Obtém o elemento para mostrar coordenadas
+const coordinateDisplay = document.getElementById('coordinateDisplay');
 
 // Seleciona o contêiner do grid
 const gridContainer = document.querySelector('.grid-container');
@@ -32,6 +41,7 @@ function createGrid(rows, cols) {
             gridItem.dataset.x = x; // Coordenada x
             gridItem.dataset.y = y; // Coordenada y
             gridItem.addEventListener('click', handleClick); // Adiciona o Event Listener para capturar cliques
+            gridItem.addEventListener('mouseover', handleMouseOver); // Atualiza coordenadas ao passar o mouse
             gridContainer.appendChild(gridItem);
         }
     }
@@ -70,8 +80,56 @@ function handleClick(event) {
     }
 }
 
-// Função que lida com o clique continuo nos pontos do grid
-function handleClickAndHold(event) {}
+// Função que lida com o movimento do mouse sobre o grid para atualizar coordenadas
+function handleMouseOver(event) {
+    const hoveredItem = event.target;
+    const x = parseInt(hoveredItem.dataset.x);
+    const y = parseInt(hoveredItem.dataset.y);
+
+    // Atualiza o display das coordenadas
+    coordinateDisplay.textContent = `X: ${x}, Y: ${y}`;
+}
+
+// Função que decide qual algoritmo de rasterização de linhas será utilizado (DDA ou Bresenham)
+function getSelectedAlgorithm() {
+    return algorithmSwitch.value;
+}
+
+// Função para obter o coeficiente de rotação
+function getRotationCoefficient() {
+    return parseInt(rotationCoefficientInput.value, 10);
+}
+
+// Função para desenhar a linha entre dois pontos usando o algoritmo selecionado
+function drawLine(startPoint, endPoint, color) {
+    const algorithm = getSelectedAlgorithm();
+    if (algorithm === 'dda') {
+        drawLineDDA(startPoint, endPoint, color);
+    } else if (algorithm === 'bresenham') {
+        drawLineBresenham(startPoint, endPoint, color);
+    }
+}
+
+// Função para desenhar a linha entre dois pontos usando o algoritmo DDA
+function drawLineDDA(startPoint, endPoint, color) {
+    const { x: x0, y: y0 } = startPoint;
+    const { x: x1, y: y1 } = endPoint;
+
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const steps = Math.max(Math.abs(dx), Math.abs(dy));
+    const xIncrement = dx / steps;
+    const yIncrement = dy / steps;
+
+    let x = x0;
+    let y = y0;
+
+    for (let i = 0; i <= steps; i++) {
+        setPixel(Math.round(x), Math.round(y), color);
+        x += xIncrement;
+        y += yIncrement;
+    }
+}
 
 // Função para desenhar a linha entre dois pontos usando o algoritmo de Bresenham
 function drawLineBresenham(startPoint, endPoint, color) {
@@ -107,9 +165,9 @@ function connectPoints(points) {
     const selectedColor = colorPicker.value; // Obtém a cor selecionada
 
     for (let i = 0; i < points.length - 1; i++) {
-        drawLineBresenham(points[i], points[i + 1], selectedColor);
+        drawLine(points[i], points[i + 1], selectedColor);
     }
-    drawLineBresenham(points[points.length - 1], points[0], selectedColor);
+    drawLine(points[points.length - 1], points[0], selectedColor);
 
     if (selectedPoints.length > 2) {
         createdShapes.push([...selectedPoints]); // Adiciona a forma criada ao array de formas
@@ -117,7 +175,7 @@ function connectPoints(points) {
     selectedPoints = []; // Limpa os pontos selecionados para a próxima forma
 }
 
-// Função que cria um circunferência com base nas coordenadas do centro e raio
+// Função que cria um círculo com base nas coordenadas do centro e raio
 function createCircle(center, edge) {
     const { x: cx, y: cy } = center;
     const { x: ex, y: ey } = edge;
@@ -158,13 +216,12 @@ function createCircle(center, edge) {
     selectedPoints = []
 }
 
-
 // Função para apagar uma forma
 function deleteShape(points) {
     for (let i = 0; i < points.length - 1; i++) {
-        drawLineBresenham(points[i], points[i + 1], "white");
+        drawLine(points[i], points[i + 1], "white");
     }
-    drawLineBresenham(points[points.length - 1], points[0], "white");
+    drawLine(points[points.length - 1], points[0], "white");
 }
 
 // Função para destacar a forma
@@ -192,7 +249,7 @@ function shiftShape(shapeIndex, xShift, yShift) {
     }
 
     // Remove a antiga forma do grid
-    deleteShape(originalShape)
+    deleteShape(originalShape);
 
     // Desenha a nova forma no grid
     connectPoints(movedShape);
@@ -202,16 +259,17 @@ function shiftShape(shapeIndex, xShift, yShift) {
 }
 
 // Função para rotacionar uma forma
-function rotateShape(shapeIndex, angleInDegrees) {
+function rotateShape(shapeIndex) {
     if (shapeIndex >= createdShapes.length) {
         console.error('Shape index out of bounds');
         return;
     }
 
     let originalShape = createdShapes[shapeIndex];
+    const rotationCoefficient = getRotationCoefficient();
 
     // Converte o ângulo de graus para radianos
-    let angleInRadians = angleInDegrees * (Math.PI / 180);
+    let angleInRadians = rotationCoefficient * (Math.PI / 180);
 
     // Calcula o centro da forma (centroide)
     let centerX = originalShape.reduce((sum, point) => sum + point.x, 0) / originalShape.length;
@@ -234,7 +292,7 @@ function rotateShape(shapeIndex, angleInDegrees) {
     });
 
     // Remove a forma antiga do grid
-    deleteShape(originalShape)
+    deleteShape(originalShape);
 
     // Desenha a forma rotacionada no grid
     connectPoints(rotatedShape);
@@ -270,16 +328,15 @@ function listCreatedCircles() {
 // Cria o grid na inicialização
 createGrid(rows, cols);
 
-
 // Adiciona um event listener para detectar quando uma tecla é pressionada
 document.addEventListener('keydown', (event) => {
     switch (event.key) {
         case 'ArrowUp':
             // Chame a função desejada para mover a forma para cima, por exemplo:
-            event.ctrlKey ? rotateShape(createdShapes.length - 1, 15) : shiftShape(createdShapes.length - 1, 0, -1); // Mover para cima
+            event.ctrlKey ? rotateShape(createdShapes.length - 1) : shiftShape(createdShapes.length - 1, 0, -1); // Mover para cima
             break;
         case 'ArrowDown':
-            event.ctrlKey ? rotateShape(createdShapes.length - 1, -15) :
+            event.ctrlKey ? rotateShape(createdShapes.length - 1) :
                 shiftShape(createdShapes.length - 1, 0, 1); // Mover para baixo
             break;
         case 'ArrowLeft':

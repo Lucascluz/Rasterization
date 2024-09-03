@@ -10,22 +10,30 @@
 
 <body>
     <div class="container">
-        <div class="toolbar">
-            <button onclick="connectPoints(selectedPoints)">Shape</button>
-            <button onclick="createCircle(selectedPoints[0], selectedPoints[1])">Circle</button>
-            <input type="color" id="lineColorPicker" value="#000000"> <!-- Input para selecionar a cor -->
+        <div class="container">
+            <div class="toolbar">
+                <button onclick="connectPoints(selectedPoints)">Shape</button>
+                <button onclick="createCircle(selectedPoints[0], selectedPoints[1])">Circle</button>
+                <input type="color" id="lineColorPicker" value="#000000"> <!-- Input para selecionar a cor -->
+                <select id="algorithmSelector">
+                    <option value="dda">DDA</option>
+                    <option value="bresenham">Bresenham</option>
+                </select>
+                <input type="number" id="rotationCoefficient" min="1" max="180" value="15">
+                <!-- Input para coeficiente de rotação -->
+            </div>
+
+            <div class="grid-container"></div>
+
+            <div class="snackbar">
+                <button onclick="clearGrid()">Clear</button>
+                <div id="coordinateDisplay">X: 0, Y: 0</div>
+            </div>
         </div>
 
-        <div class="grid-container"></div>
-
-        <div class="snackbar">
-            <button onclick="clearGrid()">Clear</button>
-        </div>
-    </div>
 
 
-
-    <script src="script.js"></script>
+        <script src="script.js"></script>
 </body>
 
 
