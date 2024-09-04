@@ -1,6 +1,6 @@
 // Número de linhas e colunas do grid
-const rows = 80;
-const cols = 55;
+const rows = 45;
+const cols = 45;
 
 // Tamanho de cada item do grid em pixels
 const gridItemSize = 10;
@@ -291,6 +291,34 @@ function rotateShape(shapeIndex) {
         };
     });
 
+    function scaleShape(shapeIndex, scaleFactor) {
+        if (shapeIndex >= createdShapes.length) {
+            console.error('Shape index out of bounds');
+            return;
+        }
+
+        let originalShape = createdShapes[shapeIndex];
+        let centerX = originalShape.reduce((sum, point) => sum + point.x, 0) / originalShape.length;
+        let centerY = originalShape.reduce((sum, point) => sum + point.y, 0) / originalShape.length;
+
+        let scaledShape = originalShape.map(point => {
+            let x = point.x - centerX;
+            let y = point.y - centerY;
+
+            let scaledX = x * scaleFactor;
+            let scaledY = y * scaleFactor;
+
+            return {
+                x: Math.round(scaledX + centerX),
+                y: Math.round(scaledY + centerY)
+            };
+        });
+
+        deleteShape(originalShape);
+        connectPoints(scaledShape);
+        createdShapes[shapeIndex] = scaledShape;
+    }
+
     // Remove a forma antiga do grid
     deleteShape(originalShape);
 
@@ -299,6 +327,167 @@ function rotateShape(shapeIndex) {
 
     // Atualiza o array de formas
     createdShapes[shapeIndex] = rotatedShape;
+}
+
+// Função que aumenta ou diminui as dimensões de uma forma de acordo com o coeficiente de escala
+function scaleShape(shapeIndex, scaleFactor) {
+    if (shapeIndex >= createdShapes.length) {
+        console.error('Shape index out of bounds');
+        return;
+    }
+
+    let originalShape = createdShapes[shapeIndex];
+    let centerX = originalShape.reduce((sum, point) => sum + point.x, 0) / originalShape.length;
+    let centerY = originalShape.reduce((sum, point) => sum + point.y, 0) / originalShape.length;
+
+    let scaledShape = originalShape.map(point => {
+        let x = point.x - centerX;
+        let y = point.y - centerY;
+
+        let scaledX = x * scaleFactor;
+        let scaledY = y * scaleFactor;
+
+        return {
+            x: Math.round(scaledX + centerX),
+            y: Math.round(scaledY + centerY)
+        };
+    });
+
+    deleteShape(originalShape);
+    connectPoints(scaledShape);
+    createdShapes[shapeIndex] = scaledShape;
+}
+
+// Função que faz o espelhamento da uma forma de acordo com um eixo fornecido
+function reflectShape(shapeIndex, axis) {
+    if (shapeIndex >= createdShapes.length) {
+        console.error('Shape index out of bounds');
+        return;
+    }
+
+    let originalShape = createdShapes[shapeIndex];
+    let reflectedShape = originalShape.map(point => {
+        if (axis === 'x') {
+            return { x: -point.x, y: point.y };
+        } else if (axis === 'y') {
+            return { x: point.x, y: -point.y };
+        } else if (axis === 'xy') {
+            return { x: -point.x, y: -point.y };
+        }
+    });
+
+    deleteShape(originalShape);
+    connectPoints(reflectedShape);
+    createdShapes[shapeIndex] = reflectedShape;
+}
+
+// Função para recortar uma linha usando o algoritmo Cohen-Sutherland
+function cohenSutherlandClip(x0, y0, x1, y1, xmin, ymin, xmax, ymax) {
+    // Define os códigos de região
+    const INSIDE = 0; // Dentro da janela
+    const LEFT = 1; // À esquerda da janela
+    const RIGHT = 2; // À direita da janela
+    const BOTTOM = 4; // Abaixo da janela
+    const TOP = 8; // Acima da janela
+
+    function computeCode(x, y) {
+        let code = INSIDE;
+        if (x < xmin) code |= LEFT;
+        else if (x > xmax) code |= RIGHT;
+        if (y < ymin) code |= BOTTOM;
+        else if (y > ymax) code |= TOP;
+        return code;
+    }
+
+    let code0 = computeCode(x0, y0);
+    let code1 = computeCode(x1, y1);
+    let accept = false;
+
+    while (true) {
+        if ((code0 | code1) === 0) {
+            // Ambos os pontos estão dentro da janela
+            accept = true;
+            break;
+        } else if ((code0 & code1) !== 0) {
+            // Ambos os pontos são fora da mesma região
+            break;
+        } else {
+            let codeOut;
+            let x, y;
+
+            // Determina qual ponto está fora da janela
+            if (code0 !== 0) codeOut = code0;
+            else codeOut = code1;
+
+            // Calcula o ponto de interseção com a janela
+            if ((codeOut & TOP) !== 0) {
+                x = x0 + (x1 - x0) * (ymax - y0) / (y1 - y0);
+                y = ymax;
+            } else if ((codeOut & BOTTOM) !== 0) {
+                x = x0 + (x1 - x0) * (ymin - y0) / (y1 - y0);
+                y = ymin;
+            } else if ((codeOut & RIGHT) !== 0) {
+                y = y0 + (y1 - y0) * (xmax - x0) / (x1 - x0);
+                x = xmax;
+            } else if ((codeOut & LEFT) !== 0) {
+                y = y0 + (y1 - y0) * (xmin - x0) / (x1 - x0);
+                x = xmin;
+            }
+
+            // Atualiza o ponto fora da janela
+            if (codeOut === code0) {
+                x0 = x;
+                y0 = y;
+                code0 = computeCode(x0, y0);
+            } else {
+                x1 = x;
+                y1 = y;
+                code1 = computeCode(x1, y1);
+            }
+        }
+    }
+
+    return accept ? { x0, y0, x1, y1 } : null;
+}
+
+function applyClipping(clippingType) {
+    if (clippingType === 'cohen-sutherland') {
+        const xmin = 10, ymin = 10, xmax = 400, ymax = 400; // Defina sua janela de recorte aqui
+        const lines = createdShapes; // Supondo que você queira recortar todas as linhas criadas
+
+        lines.forEach(shape => {
+            for (let i = 0; i < shape.length - 1; i++) {
+                let { x: x0, y: y0 } = shape[i];
+                let { x: x1, y: y1 } = shape[i + 1];
+                let clippedLine = cohenSutherlandClip(x0, y0, x1, y1, xmin, ymin, xmax, ymax);
+
+                if (clippedLine) {
+                    // Remove a linha antiga e desenha a linha recortada
+                    deleteShape([shape[i], shape[i + 1]]);
+                    drawLine({ x: clippedLine.x0, y: clippedLine.y0 }, { x: clippedLine.x1, y: clippedLine.y1 }, colorPicker.value);
+                }
+            }
+        });
+    }
+
+    if (clippingType === 'liang-barsky') {
+        const xmin = 10, ymin = 10, xmax = 400, ymax = 400; // Defina sua janela de recorte aqui
+        const lines = createdShapes; // Supondo que você queira recortar todas as linhas criadas
+
+        lines.forEach(shape => {
+            for (let i = 0; i < shape.length - 1; i++) {
+                let { x: x0, y: y0 } = shape[i];
+                let { x: x1, y: y1 } = shape[i + 1];
+                let clippedLine = liangBarskyClip(x0, y0, x1, y1, xmin, ymin, xmax, ymax);
+
+                if (clippedLine) {
+                    // Remove a linha antiga e desenha a linha recortada
+                    deleteShape([shape[i], shape[i + 1]]);
+                    drawLine({ x: clippedLine.x0, y: clippedLine.y0 }, { x: clippedLine.x1, y: clippedLine.y1 }, colorPicker.value);
+                }
+            }
+        });
+    }
 }
 
 // Função para logar as coordenadas da forma
@@ -323,6 +512,33 @@ function listCreatedCircles() {
     createdCircles.forEach((circle, index) => {
         console.log(`Círculo ${index + 1}: Centro (${circle.center.x}, ${circle.center.y}), Raio: ${circle.radius}`);
     });
+}
+
+// Função para recortar uma linha usando o algoritmo Liang-Barsky
+function liangBarskyClip(x0, y0, x1, y1, xmin, ymin, xmax, ymax) {
+    const p = [-(x1 - x0), (x1 - x0), -(y1 - y0), (y1 - y0)];
+    const q = [x0 - xmin, xmax - x0, y0 - ymin, ymax - y0];
+    let t0 = 0, t1 = 1;
+
+    for (let i = 0; i < 4; i++) {
+        let r = q[i] / p[i];
+        if (p[i] === 0) {
+            if (q[i] < 0) return null;
+        } else if (p[i] < 0) {
+            t0 = Math.max(t0, r);
+        } else {
+            t1 = Math.min(t1, r);
+        }
+    }
+
+    if (t0 > t1) return null;
+
+    return {
+        x0: x0 + t0 * (x1 - x0),
+        y0: y0 + t0 * (y1 - y0),
+        x1: x0 + t1 * (x1 - x0),
+        y1: y0 + t1 * (y1 - y0)
+    };
 }
 
 // Cria o grid na inicialização
