@@ -371,6 +371,86 @@ function mirrorShapeY(shapeIndex) {
     createdShapes[shapeIndex] = mirroredShape;
 }
 
+// Constantes para os limites da janela de recorte
+const xMin = 0;
+const xMax = cols - 1;
+const yMin = 0;
+const yMax = rows - 1;
+
+// Códigos de região para Cohen-Sutherland
+const INSIDE = 0; // 0000
+const LEFT = 1;   // 0001
+const RIGHT = 2;  // 0010
+const BOTTOM = 4; // 0100
+const TOP = 8;    // 1000
+
+// Função para calcular o código de região de um ponto (Cohen-Sutherland)
+function computeRegionCode(x, y) {
+    let code = INSIDE;
+
+    if (x < xMin) code |= LEFT;
+    else if (x > xMax) code |= RIGHT;
+    if (y < yMin) code |= BOTTOM;
+    else if (y > yMax) code |= TOP;
+
+    return code;
+}
+
+// Implementação do algoritmo de recorte de linha Cohen-Sutherland
+function cohenSutherlandClip(startPoint, endPoint) {
+    console.log("pelomenos na função eu entro")
+    let { x: x0, y: y0 } = startPoint;
+    let { x: x1, y: y1 } = endPoint;
+
+    let code0 = computeRegionCode(x0, y0);
+    let code1 = computeRegionCode(x1, y1);
+    let accept = false;
+
+    while (true) {
+        if (!(code0 | code1)) {
+            // Se ambos os pontos estão dentro da janela
+            accept = true;
+            break;
+        } else if (code0 & code1) {
+            // Se ambos os pontos estão fora da mesma região
+            break;
+        } else {
+            // Pelo menos um ponto está fora, então recorte a linha
+            let codeOut = code0 ? code0 : code1;
+            let x, y;
+
+            if (codeOut & TOP) {
+                x = x0 + ((x1 - x0) * (yMax - y0)) / (y1 - y0);
+                y = yMax;
+            } else if (codeOut & BOTTOM) {
+                x = x0 + ((x1 - x0) * (yMin - y0)) / (y1 - y0);
+                y = yMin;
+            } else if (codeOut & RIGHT) {
+                y = y0 + ((y1 - y0) * (xMax - x0)) / (x1 - x0);
+                x = xMax;
+            } else if (codeOut & LEFT) {
+                y = y0 + ((y1 - y0) * (xMin - x0)) / (x1 - x0);
+                x = xMin;
+            }
+
+            if (codeOut === code0) {
+                x0 = x;
+                y0 = y;
+                code0 = computeRegionCode(x0, y0);
+            } else {
+                x1 = x;
+                y1 = y;
+                code1 = computeRegionCode(x1, y1);
+            }
+        }
+    }
+    console.log("aqui eu sei que eu sai do loop")
+    if (accept) {
+        drawLineBresenham({ x: Math.round(x0), y: Math.round(y0) }, { x: Math.round(x1), y: Math.round(y1) }, "white");
+        console.log("Aqui teoricamente ja cortou a linha onde eu selecionei")
+    }
+}
+
 // Cria o grid na inicialização
 createGrid(rows, cols);
 
