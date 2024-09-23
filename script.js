@@ -1,6 +1,6 @@
 // Número de linhas e colunas do grid
 const rows = 80;
-const cols = 45;
+const cols = 120;
 
 // Tamanho de cada item do grid em pixels
 const gridItemSize = 10;
@@ -15,7 +15,8 @@ let gridCache = {};
 
 // Obtenção dos elementos HTML uma vez
 const colorPicker = document.getElementById('lineColorPicker');
-const algorithmSwitch = document.getElementById('algorithmSelector');
+const lineAlgorithmSwitch = document.getElementById('lineAlgorithmSelector');
+const clipAlgorithmSwitch = document.getElementById('clipAlgorithmSelector');
 const rotationCoefficientInput = document.getElementById('rotationCoefficient');
 const coordinateDisplay = document.getElementById('coordinateDisplay');
 const gridContainer = document.querySelector('.grid-container');
@@ -95,8 +96,8 @@ function handleMouseOver(event) {
 
 // Função para desenhar uma linha entre dois pontos
 function drawLine(startPoint, endPoint, color) {
-    const algorithm = algorithmSwitch.value;
-    if (algorithm === 'dda') {
+    const lineAlgorithm = lineAlgorithmSwitch.value;
+    if (lineAlgorithm === 'dda') {
         drawLineDDA(startPoint, endPoint, color);
     } else {
         drawLineBresenham(startPoint, endPoint, color);
@@ -203,12 +204,6 @@ function deleteShape(points) {
         drawLine(points[i], points[i + 1], "white");
     }
     drawLine(points[points.length - 1], points[0], "white");
-}
-
-// Função para destacar a forma
-function highlightShape(index) {
-    // Implementação da função para destacar uma forma
-    // Pode usar uma cor diferente para destacar ou outro estilo
 }
 
 // Função para mover uma forma selecionada
@@ -396,9 +391,17 @@ function computeRegionCode(x, y) {
     return code;
 }
 
+function lineClip(startPoint, endPoint) {
+    const clipAlgorithm = clipAlgorithmSwitch.value;
+    if (clipAlgorithm === "cohen") {
+        cohenSutherlandClip(startPoint, endPoint)
+    } else {
+        liangBarskyClip(startPoint, endPoint)
+    }
+}
+
 // Implementação do algoritmo de recorte de linha Cohen-Sutherland
 function cohenSutherlandClip(startPoint, endPoint) {
-    console.log("pelomenos na função eu entro")
     let { x: x0, y: y0 } = startPoint;
     let { x: x1, y: y1 } = endPoint;
 
@@ -444,12 +447,53 @@ function cohenSutherlandClip(startPoint, endPoint) {
             }
         }
     }
-    console.log("aqui eu sei que eu sai do loop")
     if (accept) {
         drawLineBresenham({ x: Math.round(x0), y: Math.round(y0) }, { x: Math.round(x1), y: Math.round(y1) }, "white");
-        console.log("Aqui teoricamente ja cortou a linha onde eu selecionei")
     }
 }
+
+// Função para recortar uma linha usando o algoritmo Liang-Barsky
+function liangBarskyClip(startPoint, endPoint) {
+    let { x: x0, y: y0 } = startPoint;
+    let { x: x1, y: y1 } = endPoint;
+
+    let dx = x1 - x0;
+    let dy = y1 - y0;
+
+    let p = [-dx, dx, -dy, dy];
+    let q = [x0 - xMin, xMax - x0, y0 - yMin, yMax - y0];
+
+    let u1 = 0;
+    let u2 = 1;
+
+    for (let i = 0; i < 4; i++) {
+        if (p[i] === 0) {
+            if (q[i] < 0) return; // Linha fora da borda paralela
+        } else {
+            let t = q[i] / p[i];
+            if (p[i] < 0) {
+                if (t > u2) return; // Fora da janela
+                if (t > u1) u1 = t; // Atualiza u1
+            } else {
+                if (t < u1) return; // Fora da janela
+                if (t < u2) u2 = t; // Atualiza u2
+            }
+        }
+    }
+
+    let newX0 = x0 + u1 * dx;
+    let newY0 = y0 + u1 * dy;
+    let newX1 = x0 + u2 * dx;
+    let newY1 = y0 + u2 * dy;
+
+    // Desenha a linha recortada
+    drawLineBresenham(
+        { x: Math.round(newX0), y: Math.round(newY0) },
+        { x: Math.round(newX1), y: Math.round(newY1) },
+        "white"
+    );
+}
+
 
 // Cria o grid na inicialização
 createGrid(rows, cols);
