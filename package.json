@@ -1,0 +1,15 @@
+{
+  "name": "rasterization",
+  "version": "1.0.0",
+  "description": "Rasterization fundamentals aplication",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Lucas Carvalho da Luz",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "32.1.2",
+    "electron-packager": "^17.1.2"
+  }
+}

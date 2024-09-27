@@ -242,7 +242,7 @@ function rotateShape(shapeIndex) {
     }
 
     let originalShape = createdShapes[shapeIndex];
-    const rotationCoefficient = getRotationCoefficient();
+    const rotationCoefficient = rotationCoefficientInput.value;
 
     // Converte o ângulo de graus para radianos
     let angleInRadians = rotationCoefficient * (Math.PI / 180);

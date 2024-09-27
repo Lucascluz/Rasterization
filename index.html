@@ -12,18 +12,23 @@
     <div class="container">
         <div class="container">
             <div class="toolbar">
-                <button onclick="connectPoints(selectedPoints)">Shape</button>
+                <div>
+                    <select id="lineAlgorithmSelector">
+                        <option value="dda">DDA</option>
+                        <option value="bresenham">Bresenham</option>
+                    </select>
+                    <button onclick="connectPoints(selectedPoints)">Shape</button>
+                </div>
+                <div>
+                    <select id="clipAlgorithmSelector">
+                        <option value="cohen">Cohen Sutherland</option>
+                        <option value="liang">Liang Barsky</option>
+                    </select>
+                    <button onclick="lineClip(selectedPoints[0], selectedPoints[1])">Clip</button>
+                </div>
                 <button onclick="createCircle(selectedPoints[0], selectedPoints[1])">Circle</button>
-                <button onclick="lineClip(selectedPoints[0], selectedPoints[1])">Clip</button>
                 <input type="color" id="lineColorPicker" value="#000000"> <!-- Input para selecionar a cor -->
-                <select id="lineAlgorithmSelector">
-                    <option value="dda">DDA</option>
-                    <option value="bresenham">Bresenham</option>
-                </select>
-                <select id="clipAlgorithmSelector">
-                    <option value="cohen">Cohen Sutherland</option>
-                    <option value="liang">Liang Barsky</option>
-                </select>
+
                 <label for="scaleFactor">Rotação:</label>
                 <input type="number" id="rotationCoefficient" min="1" max="180" value="15">
                 <label for="scaleFactor">Escala:</label>
